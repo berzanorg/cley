@@ -1,4 +1,4 @@
-import type { Handler } from './types'
+import type { Command, Handler } from './types'
 import { parseArgv, parseLayout } from './parse'
 
 export class Cley {
@@ -11,31 +11,26 @@ export class Cley {
     }
 
     command<T extends string>(layout: T, handler: Handler<T>): Cley {
-        const {
-            name,
-            requiredArgs,
-            optionalArgs,
-            requiredFlags,
-            optionalFlags,
-        } = parseLayout(layout)
+        const { name, parsedLayout } = parseLayout(layout)
 
         if (this.commands.has(name)) {
             throw Error(`Command ${name} cannot be defined many times`)
         }
 
         this.commands.set(name, {
-            requiredArgs,
-            optionalArgs,
-            requiredFlags,
-            optionalFlags,
             handler,
+            parsedLayout,
         })
 
         return this
     }
 
     async run(): Promise<void> {
-        const { name, params } = parseArgv(process.argv)
+        const name = process.argv[2]
+
+        if (!name) {
+            throw Error(`Command name is not given`)
+        }
 
         const command = this.commands.get(name)
 
@@ -43,16 +38,10 @@ export class Cley {
             throw Error(`Command ${name} doesn't exist`)
         }
 
+        const params = parseArgv(process.argv.slice(3), command.parsedLayout)
+
         const result = command.handler(params)
 
         if (result instanceof Promise) await result
     }
-}
-
-type Command = {
-    requiredArgs: Array<string>
-    optionalArgs: Array<string>
-    requiredFlags: Array<string>
-    optionalFlags: Array<string>
-    handler: Handler<any>
 }
