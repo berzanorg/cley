@@ -19,3 +19,12 @@ type ParamsInner<T extends string> = T extends `<${infer K}> ${infer L}`
 type Objectify<T extends string> = T extends `${infer K}?`
     ? { [key in K]?: string }
     : { [key in T]: string }
+
+export type Command = { parsedLayout: ParsedLayout; handler: Handler<any> }
+
+export type ParsedLayout = {
+    requiredArgs: Array<string>
+    optionalArgs: Array<string>
+    requiredFlags: Array<string>
+    optionalFlags: Array<string>
+}
